@@ -1,3 +1,1 @@
 # External Contributors
-
-- @Xenogents
