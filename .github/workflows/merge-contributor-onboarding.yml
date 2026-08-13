@@ -15,8 +15,17 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
+      - name: Generate Approver Token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APPROVER_APP_ID }}
+          private-key: ${{ secrets.APPROVER_APP_PRIVATE_KEY }}
+
       - name: Validate and merge onboarding PR
         uses: actions/github-script@v7
+        env:
+          APPROVER_TOKEN: ${{ steps.generate_token.outputs.token }}
         with:
           script: |
             const pr = context.payload.pull_request;
@@ -89,6 +98,19 @@ jobs:
               return fail("file contents do not match one appended contributor entry.");
             }
 
+            // --- NEW: Approve the PR using the second identity (Approver Bot) ---
+            const { getOctokit } = require("@actions/github");
+            const approverOctokit = getOctokit(process.env.APPROVER_TOKEN);
+
+            await approverOctokit.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              event: "APPROVE",
+            });
+            core.info(`Approved onboarding PR #${pr.number} via Approver Token.`);
+
+            // --- EXISTING: Merge the PR ---
             await github.rest.pulls.merge({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -97,3 +119,15 @@ jobs:
               merge_method: "rebase",
             });
             core.info(`Merged onboarding PR #${pr.number} for @${contributor}.`);
+
+            // --- NEW: Delete the branch after successful merge ---
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `heads/${pr.head.ref}`
+              });
+              core.info(`Deleted branch ${pr.head.ref}.`);
+            } catch (error) {
+              core.warning(`Could not delete branch ${pr.head.ref}: ${error.message}`);
+            }
