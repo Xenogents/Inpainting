@@ -98,7 +98,7 @@ jobs:
               return fail("file contents do not match one appended contributor entry.");
             }
 
-            // --- NEW: Approve the PR using the second identity (Approver Bot) ---
+            // Approve the PR using the Approver Bot identity
             const { getOctokit } = require("@actions/github");
             const approverOctokit = getOctokit(process.env.APPROVER_TOKEN);
 
@@ -110,7 +110,7 @@ jobs:
             });
             core.info(`Approved onboarding PR #${pr.number} via Approver Token.`);
 
-            // --- EXISTING: Merge the PR ---
+            // Merge the PR
             await github.rest.pulls.merge({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -120,7 +120,7 @@ jobs:
             });
             core.info(`Merged onboarding PR #${pr.number} for @${contributor}.`);
 
-            // --- NEW: Delete the branch after successful merge ---
+            // Delete the branch after successful merge
             try {
               await github.rest.git.deleteRef({
                 owner: context.repo.owner,
