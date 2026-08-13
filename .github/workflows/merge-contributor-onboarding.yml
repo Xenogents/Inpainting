@@ -61,7 +61,7 @@ jobs:
 
             const commit = commits[0];
             const contributor = commit.author?.login;
-            if (!contributor || commit.committer?.login !== expectedBot) {
+            if (!contributor || (commit.committer?.login !== expectedBot && commit.committer?.login !== "memanto-contributor[bot]")) {
               return fail("commit must be authored by a GitHub user and committed by the onboarding app.");
             }
 
