@@ -99,15 +99,21 @@ jobs:
             }
 
             // Approve the PR using the Approver Bot identity
-            const { getOctokit } = require("@actions/github");
-            const approverOctokit = getOctokit(process.env.APPROVER_TOKEN);
-
-            await approverOctokit.rest.pulls.createReview({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: pr.number,
-              event: "APPROVE",
+            const approveRes = await fetch(`https://api.github.com/repos/${context.repo.owner}/${context.repo.repo}/pulls/${pr.number}/reviews`, {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${process.env.APPROVER_TOKEN}`,
+                "Accept": "application/vnd.github.v3+json",
+                "X-GitHub-Api-Version": "2022-11-28",
+                "User-Agent": "actions/github-script"
+              },
+              body: JSON.stringify({ event: "APPROVE" })
             });
+
+            if (!approveRes.ok) {
+              const errText = await approveRes.text();
+              return fail(`Failed to approve PR via token: ${errText}`);
+            }
             core.info(`Approved onboarding PR #${pr.number} via Approver Token.`);
 
             // Merge the PR
