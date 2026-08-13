@@ -11,7 +11,7 @@ permissions:
 jobs:
   merge:
     if: >-
-      github.event.pull_request.user.login == 'memanto-contributor[bot]' &&
+      github.event.pull_request.user.login == 'memanto-bot[bot]' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
@@ -29,7 +29,7 @@ jobs:
         with:
           script: |
             const pr = context.payload.pull_request;
-            const expectedBot = "memanto-contributor[bot]";
+            const expectedBot = "memanto-bot[bot]";
             const expectedRepository = `${context.repo.owner}/${context.repo.repo}`;
 
             const fail = (message) => core.setFailed(`Contributor onboarding PR rejected: ${message}`);
